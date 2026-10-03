@@ -7,8 +7,12 @@
 // Timezone setup
 date_default_timezone_set('Asia/Jakarta');
 
-// Database File Path
-define('DB_FILE', __DIR__ . '/database.sqlite');
+// Database MySQL Credentials (Dummy Localhost)
+define('DB_HOST', 'localhost');
+define('DB_USER', 'root');
+define('DB_PASS', ''); // Kosongkan jika menggunakan XAMPP standar
+define('DB_NAME', 'db_undian_shopeefood');
+
 define('UPLOAD_DIR', __DIR__ . '/uploads/screenshots/');
 define('UPLOAD_URL_PATH', 'uploads/screenshots/');
 
@@ -26,12 +30,10 @@ function getDB() {
     static $pdo = null;
     if ($pdo === null) {
         try {
-            $pdo = new PDO('sqlite:' . DB_FILE);
+            $dsn = "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4";
+            $pdo = new PDO($dsn, DB_USER, DB_PASS);
             $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-            
-            // Enable WAL mode for better concurrency
-            $pdo->exec('PRAGMA journal_mode = WAL;');
         } catch (PDOException $e) {
             die("Database Connection Error: " . $e->getMessage());
         }
@@ -45,51 +47,42 @@ function initDB() {
     
     // 1. Settings table
     $db->exec("CREATE TABLE IF NOT EXISTS settings (
-        setting_key TEXT UNIQUE PRIMARY KEY,
+        setting_key VARCHAR(191) PRIMARY KEY,
         setting_value TEXT
-    )");
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
 
     // 2. Periods table
     $db->exec("CREATE TABLE IF NOT EXISTS periods (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nama_periode TEXT NOT NULL,
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        nama_periode VARCHAR(255) NOT NULL,
         tanggal_undian DATETIME NOT NULL,
         announcement_note TEXT,
-        is_active INTEGER DEFAULT 0,
-        status TEXT DEFAULT 'berlangsung',
+        is_active TINYINT DEFAULT 0,
+        status VARCHAR(50) DEFAULT 'berlangsung',
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )");
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
 
     // 3. Submissions table
     $db->exec("CREATE TABLE IF NOT EXISTS submissions (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nama TEXT NOT NULL,
-        no_hp TEXT NOT NULL,
-        no_pesanan TEXT UNIQUE NOT NULL,
-        screenshot TEXT NOT NULL,
-        is_winner INTEGER DEFAULT 0,
-        period_id INTEGER DEFAULT 1,
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        nama VARCHAR(255) NOT NULL,
+        no_hp VARCHAR(50) NOT NULL,
+        no_pesanan VARCHAR(191) UNIQUE NOT NULL,
+        screenshot VARCHAR(255) NOT NULL,
+        is_winner TINYINT DEFAULT 0,
+        period_id INT DEFAULT 1,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (period_id) REFERENCES periods(id)
-    )");
+        FOREIGN KEY (period_id) REFERENCES periods(id) ON DELETE SET NULL ON UPDATE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
 
-    // Ensure period_id column exists for existing database files
+    // Ensure period_id column exists for existing database tables
     try {
-        $cols = $db->query("PRAGMA table_info(submissions)")->fetchAll();
-        $hasPeriodCol = false;
-        foreach ($cols as $col) {
-            if ($col['name'] === 'period_id') {
-                $hasPeriodCol = true;
-                break;
-            }
-        }
+        $stmt = $db->query("SHOW COLUMNS FROM submissions LIKE 'period_id'");
+        $hasPeriodCol = $stmt->fetch();
         if (!$hasPeriodCol) {
-            $db->exec("ALTER TABLE submissions ADD COLUMN period_id INTEGER DEFAULT 1");
+            $db->exec("ALTER TABLE submissions ADD COLUMN period_id INT DEFAULT 1");
         }
     } catch (Exception $e) {}
-
-    // Create unique index on no_pesanan
-    $db->exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_no_pesanan ON submissions(no_pesanan)");
 
     // Initialize default settings if empty
     $stmt = $db->query("SELECT COUNT(*) FROM settings");
@@ -126,7 +119,7 @@ function getSetting($key, $default = '') {
 function setSetting($key, $value) {
     $db = getDB();
     $stmt = $db->prepare("INSERT INTO settings (setting_key, setting_value) VALUES (?, ?) 
-                          ON CONFLICT(setting_key) DO UPDATE SET setting_value = excluded.setting_value");
+                          ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)");
     return $stmt->execute([$key, $value]);
 }
 
