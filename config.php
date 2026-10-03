@@ -8,10 +8,10 @@
 date_default_timezone_set('Asia/Jakarta');
 
 // Database MySQL Credentials (Dummy Localhost)
-define('DB_HOST', 'localhost');
-define('DB_USER', 'root');
-define('DB_PASS', ''); // Kosongkan jika menggunakan XAMPP standar
-define('DB_NAME', 'db_undian_shopeefood');
+define('DB_HOST', 'db.fr-roub1.bengt.wasmernet.com');
+define('DB_USER', 'user_ebf05c8c');
+define('DB_PASS', 'pw_DyfmigqEZ8WmDAgQ8d9wTsXlrhEsmEA2'); // Kosongkan jika menggunakan XAMPP standar
+define('DB_NAME', 'db_c694b29c');
 
 define('UPLOAD_DIR', __DIR__ . '/uploads/screenshots/');
 define('UPLOAD_URL_PATH', 'uploads/screenshots/');
