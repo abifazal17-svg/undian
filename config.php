@@ -7,10 +7,11 @@
 // Timezone setup
 date_default_timezone_set('Asia/Jakarta');
 
-// Database MySQL Credentials (Dummy Localhost)
+// Database Credentials (Wasmer Cloud)
 define('DB_HOST', 'db.fr-roub1.bengt.wasmernet.com');
+define('DB_PORT', '20184');
 define('DB_USER', 'user_ebf05c8c');
-define('DB_PASS', 'pw_DyfmigqEZ8WmDAgQ8d9wTsXlrhEsmEA2'); // Kosongkan jika menggunakan XAMPP standar
+define('DB_PASS', 'pw_DyfmigqEZ8WmDAgQ8d9wTsXlrhEsmEA2'); // Ganti dengan password database Anda
 define('DB_NAME', 'db_c694b29c');
 
 define('UPLOAD_DIR', __DIR__ . '/uploads/screenshots/');
@@ -30,7 +31,7 @@ function getDB() {
     static $pdo = null;
     if ($pdo === null) {
         try {
-            $dsn = "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4";
+            $dsn = "mysql:host=" . DB_HOST . ";port=" . DB_PORT . ";dbname=" . DB_NAME . ";charset=utf8mb4";
             $pdo = new PDO($dsn, DB_USER, DB_PASS);
             $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
